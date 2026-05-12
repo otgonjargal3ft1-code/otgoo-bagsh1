@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Газарзүйн Аялал</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        :root { --primary: #4facfe; --secondary: #00f2fe; --success: #00b894; --error: #d63031; }
+        body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #quiz-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center; }
+        .hidden { display: none; }
+        .option-btn { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #eee; border-radius: 10px; background: white; cursor: pointer; font-size: 1rem; transition: 0.3s; }
+        .option-btn:hover { border-color: var(--primary); }
+        input[type="text"] { width: 80%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; }
+        .start-btn { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 1.1rem; }
+        #feedback-text { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; z-index: 100; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="feedback-text"></div>
+
+    <div id="setup-screen">
+        <h1>Газарзүй 🌍</h1>
+        <input type="text" id="student-name" placeholder="Нэрээ энд бичнэ үү">
+        <br>
+        <button class="start-btn" onclick="startQuiz()">Эхлэх 🚀</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div id="q-emoji" style="font-size: 3rem;"></div>
+        <p id="question-text" style="font-weight: bold; font-size: 1.1rem;"></p>
+        <div id="options-container"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>Үр дүн</h2>
+        <h1 id="final-score" style="color: var(--primary);"></h1>
+        <p id="feedback-msg"></p>
+        <p id="status-text" style="font-size: 0.8rem; color: gray;">Үр дүнг илгээж байна...</p>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "Дэлхийн гадаргын хамгийн том нэгж 'Тив' нийт хэд вэ?", a: ["5", "6", "7", "4"], c: 1, e: "💰" },
+        { q: "Гринвичийн меридиан аль хотыг дайран өнгөрдөг вэ?", a: ["Парис", "Москва", "Лондон", "Нью-Йорк"], c: 2, e: "🚀" },
+        { q: "Газрын зураг дээрх хүрэн өнгө юуг илэрхийлдэг вэ?", a: ["Нам доор газар", "Тал газар", "Ус", "Өндөр уул нурууд"], c: 3, e: "🏦" },
+        { q: "Дэлхийн хамгийн их устай мөрнийг нэрлэнэ үү?", a: ["Нил", "Амазон", "Енисей", "Янцзы"], c: 1, e: "🤝" },
+        { q: "Агаар мандлын хамгийн доод давхаргыг юу гэх вэ?", a: ["Стратосфер", "Тропосфер", "Мезосфер", "Экзосфер"], c: 1, e: "🔄" },
+        { q: "Дэлхийн хамгийн том далай аль нь вэ?", a: ["Атлант", "Энэтхэг", "Мөсөн", "Номхон"], c: 3, e: "🌊" },
+        { q: "Хэвтээ чиглэлд агаар шилжих хөдөлгөөн?", a: ["Тунадас", "Үүл", "Салхи", "Даралт"], c: 2, e: "🌬️" },
+        { q: "1 : 100,000 гэж бичсэн бол энэ ямар масштаб вэ?", a: ["Тоон", "Нэрлэсэн", "Шугаман", "Ерөнхий"], c: 0, e: "📏" },
+        { q: "Дэлхийн хамгийн жижиг газар нутагтай тив?", a: ["Антарктид", "Европ", "Австрали", "Өмнөд Америк"], c: 2, e: "🐨" },
+        { q: "Уул нуруу үүсэх гол шалтгаан нь юу вэ?", a: ["Салхи", "Хавтангийн хөдөлгөөн", "Түрлэг", "Бороо"], c: 1, e: "🌋" }
+    ];
+
+    let current = 0; let score = 0; let sName = "";
+
+    function startQuiz() {
+        sName = document.getElementById('student-name').value;
+        if(sName.trim() === "") { alert("Нэрээ оруулна уу!"); return; }
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQ();
+    }
+
+    function showQ() {
+        const q = questions[current];
+        document.getElementById('q-emoji').innerText = q.e;
+        document.getElementById('question-text').innerText = q.q;
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        q.a.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => check(idx, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function check(idx, btn) {
+        const feedback = document.getElementById('feedback-text');
+        if(idx === questions[current].c) {
+            score++;
+            btn.style.background = "#00b894";
+            btn.style.color = "white";
+            feedback.innerHTML = "✅ ЗӨВ!";
+        } else {
+            btn.style.background = "#d63031";
+            btn.style.color = "white";
+            feedback.innerHTML = "❌ БУРУУ!";
+        }
+        
+        setTimeout(() => {
+            feedback.innerHTML = "";
+            current++;
+            if(current < questions.length) showQ();
+            else finish();
+        }, 1000);
+    }
+
+    function finish() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score + " / 10";
+        
+        let m = score >= 9 ? "Та бол Суутан ! 🌟" : score >= 6 ? "Сайн байна 👍" : "Дахин оролдоорой 💪";
+        document.getElementById('feedback-msg').innerText = m;
+
+        fetch("https://formspree.io/f/mpqbbpko", {
+            method: 'POST',
+            body: JSON.stringify({ "Сурагч": sName, "Оноо": score, "Дүгнэлт": m }),
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        }).then(() => document.getElementById('status-text').innerText = "Багшид илгээгдлээ ✅");
+    }
+</script>
+</body>
+</html>
