@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Физик 9-р анги - Бодисын бүтэц, дулаан</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0984e3; /* Science Blue */
+            --accent: #00cec9; /* Tech Cyan */
+            --success: #00b894;
+            --error: #d63031;
+            --dark: #2d3436;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: radial-gradient(circle, #2d3436 0%, #000000 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; overflow: hidden; color: var(--dark);
+        }
+
+        #quiz-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px; border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 206, 201, 0.3);
+            width: 90%; max-width: 500px; text-align: center;
+            position: relative; border: 2px solid var(--accent);
+        }
+
+        .timer-container {
+            position: relative; width: 90px; height: 90px; margin: 0 auto 20px;
+        }
+        .timer-svg { transform: rotate(-90deg); width: 90px; height: 90px; }
+        .timer-circle {
+            fill: none; stroke: var(--primary); stroke-width: 7;
+            stroke-dasharray: 264; stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+        #timer-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 1.8rem; font-weight: 700; font-family: 'Orbitron', sans-serif;
+        }
+
+        .progress-bar {
+            width: 100%; height: 5px; background: #dfe6e9;
+            border-radius: 10px; margin-bottom: 25px; overflow: hidden;
+        }
+        #progress-fill {
+            width: 0%; height: 100%; background: var(--accent);
+            transition: width 0.4s ease;
+        }
+
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1.4rem; letter-spacing: 1px; }
+        .question { font-size: 1.2rem; font-weight: 600; margin-bottom: 25px; min-height: 70px; line-height: 1.5; }
+        
+        .options { display: grid; gap: 10px; }
+        .option-btn {
+            padding: 15px; border: 1.5px solid #b2bec3; border-radius: 12px;
+            background: white; font-size: 1rem; cursor: pointer;
+            transition: all 0.2s; font-weight: 500;
+        }
+        .option-btn:hover { border-color: var(--primary); background: #f1f9ff; }
+
+        #feedback-overlay {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2.8rem; font-weight: 900; z-index: 100; pointer-events: none;
+        }
+
+        .hidden { display: none; }
+        input[type="text"] {
+            padding: 15px; width: 80%; border-radius: 10px; border: 2px solid #ddd;
+            font-size: 1.1rem; margin-bottom: 20px; text-align: center;
+        }
+
+        .start-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 15px 45px; border-radius: 30px; font-size: 1.2rem; cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .start-btn:hover { background: #0773c5; box-shadow: 0 0 15px var(--accent); }
+        .score-num { font-size: 4rem; font-weight: 900; color: var(--primary); font-family: 'Orbitron', sans-serif; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="feedback-overlay"></div>
+
+    <div id="setup-screen">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🧪</div>
+        <h1>ФИЗИК - IX АНГИ</h1>
+        <p style="margin-bottom: 30px; color: #636e72;">Бодисын бүтэц, дулааны үзэгдэл</p>
+        <input type="text" id="student-name" placeholder="Сурагчийн нэр...">
+        <br>
+        <button class="start-btn animate__animated animate__pulse animate__infinite" onclick="startQuiz()">ЭХЛЭХ ⚡</button>
+        <p style="font-size: 0.8rem; color: #b2bec3; margin-top: 15px;">Асуулт бүр 30 секундын хугацаатай</p>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        
+        <div class="timer-container">
+            <svg class="timer-svg">
+                <circle class="timer-circle" id="timer-circle" cx="45" cy="45" r="42"></circle>
+            </svg>
+            <div id="timer-text">30</div>
+        </div>
+
+        <div id="q-emoji" style="font-size: 2.5rem; margin-bottom: 10px;"></div>
+        <div class="question" id="question-text"></div>
+        <div class="options" id="options-container"></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2 style="font-family: 'Orbitron', sans-serif;">ДИПЛОМ</h2>
+        <div class="score-num" id="final-score"></div>
+        <p id="feedback-msg" style="font-size: 1.1rem; font-weight: 600; margin: 20px 0;"></p>
+        <p id="status-text" style="color: #636e72; font-style: italic;">Багшид мэдээлэл илгээж байна...</p>
+        <button onclick="location.reload()" style="background: #eee; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">Дахин оролдох 🔄</button>
+    </div>
+</div>
+
+<audio id="snd-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+<audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+<audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+
+<script>
+    const questions = [
+        { q: "Бодисыг бүрдүүлэгч жижиг хэсгүүд тасралтгүй замбараагүй хөдөлгөөнд оршихыг юу гэх вэ?", a: ["Диффузи", "Дулааны хөдөлгөөн", "Броуны хөдөлгөөн", "Конвекци"], c: 1, e: "⚛️" },
+        { q: "Цельсийн шатлалын 100°C температур Кельвиний шатлалаар хэд байх вэ?", a: ["0 K", "273 K", "373 K", "100 K"], c: 2, e: "🌡️" },
+        { q: "Бодис хатуу төлөвөөс шууд хийн төлөвт шилжих үзэгдлийг юу гэх вэ?", a: ["Уурших", "Конденсаци", "Сублимаци", "Кристалжих"], c: 2, e: "☁️" },
+        { q: "Дулаан дамжуулалтын ямар хэлбэр нь зөвхөн хий ба шингэнд явагддаг вэ?", a: ["Цацраг", "Конвекци", "Дамжуулал", "Диффузи"], c: 1, e: "💨" },
+        { q: "Бодисын температурыг 1°C-ээр өөрчлөхөд шаардагдах дулааныг юу гэх вэ?", a: ["Хайлахын хувийн дулаан", "Хувийн дулаан багтаамж", "Ууршихын хувийн дулаан", "Дотоод энерги"], c: 1, e: "🔥" },
+        { q: "Шингэн бодисын гадаргуу дээр явагдах уурших үзэгдлийг юу гэх вэ?", a: ["Буцлах", "Уурших", "Конденсаци", "Хайлах"], c: 1, e: "💧" },
+        { q: "Термодинамикийн 0 дүгээр хууль юуг тодорхойлдог вэ?", a: ["Энерги хадгалагдах хууль", "Дулааны тэнцвэр", "Энтропи", "Ажил"], c: 1, e: "⚖️" },
+        { q: "Ямар бодис дулааныг хамгийн сайн дамжуулдаг вэ?", a: ["Хий", "Шил", "Металл", "Мод"], c: 2, e: "🔩" },
+        { q: "Үнэмлэхүй тэг температур гэж хэдэн градусыг хэлэх вэ?", a: ["0°C", "-273.15°C", "273.15°C", "-100°C"], c: 1, e: "❄️" },
+        { q: "Дотоод энерги гэж юу вэ?", a: ["Потенциал энерги", "Кинетик энерги", "Жижиг хэсгүүдийн кинетик ба потенциал энергийн нийлбэр", "Зөвхөн дулаан"], c: 2, e: "🔋" }
+    ];
+
+    let current = 0; let score = 0; let sName = "";
+    let timeLeft = 30; let timerInterval;
+    const circle = document.getElementById('timer-circle');
+    const circumference = 42 * 2 * Math.PI;
+
+    function startQuiz() {
+        sName = document.getElementById('student-name').value;
+        if (!sName) return alert("Нэрээ оруулна уу!");
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        circle.style.strokeDasharray = circumference;
+        showQuestion();
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 30;
+        document.getElementById('timer-text').innerText = timeLeft;
+        circle.style.strokeDashoffset = 0;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer-text').innerText = timeLeft;
+            const offset = circumference - (timeLeft / 30) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleFeedback(false, null, true);
+            }
+        }, 1000);
+    }
+
+    function showQuestion() {
+        resetTimer();
+        const q = questions[current];
+        document.getElementById('q-emoji').innerText = q.e;
+        document.getElementById('question-text').innerText = q.q;
+        document.getElementById('progress-fill').style.width = ((current / questions.length) * 100) + "%";
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        q.a.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn animate__animated';
+            btn.innerText = opt;
+            btn.onclick = () => handleFeedback(idx === q.c, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function handleFeedback(isCorrect, btn, isTimeout = false) {
+        clearInterval(timerInterval);
+        const feedback = document.getElementById('feedback-overlay');
+        const correctSnd = document.getElementById('snd-correct');
+        const wrongSnd = document.getElementById('snd-wrong');
+
+        if (isCorrect) {
+            score++;
+            btn.style.background = '#00b894'; btn.style.color = 'white';
